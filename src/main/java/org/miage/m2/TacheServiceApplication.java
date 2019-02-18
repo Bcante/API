@@ -6,9 +6,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-public class IntervenantsServiceApplication {
+public class TacheServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(IntervenantsServiceApplication.class, args);
+		SpringApplication.run(TacheServiceApplication.class, args);
 	}
 }
