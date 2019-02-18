@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.miage.m2.entity.Intervenant;
+import org.miage.m2.entity.Tache;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping(value = "/intervenants", produces = MediaType.APPLICATION_JSON_VALUE)
-@ExposesResourceFor(Intervenant.class)
+@ExposesResourceFor(Tache.class)
 public class IntervenantRepresentation {
 
     private final IntervenantRessource ir;
@@ -38,7 +38,7 @@ public class IntervenantRepresentation {
     // GET all
     @GetMapping
     public ResponseEntity<?> getAllIntervenants() {
-        Iterable<Intervenant> allItervenants = ir.findAll();
+        Iterable<Tache> allItervenants = ir.findAll();
         return new ResponseEntity<>(intervenantToResource(allItervenants), HttpStatus.OK);
     }
 
@@ -53,9 +53,9 @@ public class IntervenantRepresentation {
 
     // POST
     @PostMapping
-    public ResponseEntity<?> newIntervenant(@RequestBody Intervenant intervenant) {
+    public ResponseEntity<?> newIntervenant(@RequestBody Tache intervenant) {
         intervenant.setId(UUID.randomUUID().toString());
-        Intervenant saved = ir.save(intervenant);
+        Tache saved = ir.save(intervenant);
         HttpHeaders responseHeader = new HttpHeaders();
         responseHeader.setLocation(linkTo(IntervenantRepresentation.class).slash(saved.getId()).toUri());
         return new ResponseEntity<>(null, responseHeader, HttpStatus.CREATED);
@@ -64,22 +64,22 @@ public class IntervenantRepresentation {
     // DELETE
     @DeleteMapping(value = "/{intervenantId}")
     public ResponseEntity<?> deleteIntervenant(@PathVariable("intervenantId") String id) {
-        Optional<Intervenant> intervenant = ir.findById(id);
+        Optional<Tache> intervenant = ir.findById(id);
         if (intervenant.isPresent()) {
             ir.delete(intervenant.get());
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    private Resources<Resource<Intervenant>> intervenantToResource(Iterable<Intervenant> intervenants) {
+    private Resources<Resource<Tache>> intervenantToResource(Iterable<Tache> intervenants) {
         Link selfLink = linkTo(methodOn(IntervenantRepresentation.class).getAllIntervenants()).withSelfRel();
-        List<Resource<Intervenant>> intervenantRessources = new ArrayList();
+        List<Resource<Tache>> intervenantRessources = new ArrayList();
         intervenants.forEach(intervenant
                 -> intervenantRessources.add(intervenantToResource(intervenant, false)));
         return new Resources<>(intervenantRessources, selfLink);
     }
 
-    private Resource<Intervenant> intervenantToResource(Intervenant intervenant, Boolean collection) {
+    private Resource<Tache> intervenantToResource(Tache intervenant, Boolean collection) {
         Link selfLink = linkTo(IntervenantRepresentation.class)
                 .slash(intervenant.getId())
                 .withSelfRel();
