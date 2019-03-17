@@ -2,7 +2,10 @@ package org.miage.m2.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
+
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
@@ -10,15 +13,32 @@ public class Tache implements Serializable {
 
     @Id
     private String id;
+    //@NotNull
     private String nom;
+    //@NotNull
     private String responsable;
-    private Set<Utilisateur> participants;
+    //private Set<Utilisateur> participants;
     private String dateCreation;
     private String dateEcheance;
-    private String etatCourant; // ENUM
+    private String etatcourant; // ENUM
 
     public Tache() {
     }
+    
+    public Tache(Tache t) {
+    	this.dateCreation = LocalDate.now().toString();
+    	this.nom = t.getNom();
+		this.responsable = t.getResponsable();	
+		this.etatcourant = "crée";
+    }
+    
+	public Tache(String nom, String responsable, String etatcourant) {
+		super();
+		this.dateCreation = LocalDate.now().toString();
+		this.nom = nom;
+		this.responsable = responsable;
+		this.etatcourant = "crée";
+	}
 
 	public String getId() {
 		return id;
@@ -43,14 +63,14 @@ public class Tache implements Serializable {
 	public void setResponsable(String responsable) {
 		this.responsable = responsable;
 	}
-
+/*
 	public Set<Utilisateur> getParticipants() {
 		return participants;
 	}
 
 	public void setParticipants(Set<Utilisateur> participants) {
 		this.participants = participants;
-	}
+	}*/
 
 	public String getDateCreation() {
 		return dateCreation;
@@ -69,11 +89,11 @@ public class Tache implements Serializable {
 	}
 
 	public String getEtatCourant() {
-		return etatCourant;
+		return etatcourant;
 	}
 
-	public void setEtatCourant(String etatCourant) {
-		this.etatCourant = etatCourant;
+	public void setEtatCourant(String etatcourant) {
+		this.etatcourant = etatcourant;
 	}
 
     
