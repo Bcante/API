@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -59,26 +60,7 @@ public class TacheRepresentation {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    private Resources<Resource<Tache>> tacheToResource(Iterable<Tache> taches) {
-        Link selfLink = linkTo(methodOn(TacheRepresentation.class).getAlltaches()).withSelfRel();
-        List<Resource<Tache>> tacheRessources = new ArrayList();
-        taches.forEach(tache
-                -> tacheRessources.add(tacheToResource(tache, false)));
-        return new Resources<>(tacheRessources, selfLink);
-    }
 
-    private Resource<Tache> tacheToResource(Tache tache, Boolean collection) {
-        Link selfLink = linkTo(TacheRepresentation.class)
-                .slash(tache.getId())
-                .withSelfRel();
-        if (collection) {
-            Link collectionLink = linkTo(methodOn(TacheRepresentation.class).getAlltaches())
-                    .withSelfRel();
-            return new Resource<>(tache, selfLink, collectionLink);
-        } else {
-            return new Resource<>(tache, selfLink);
-        }
-    }
     
     
     // POST
@@ -100,6 +82,37 @@ public class TacheRepresentation {
         	tr.save(tache.get());
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    
+    // PUT
+    @PutMapping(value = "/{tacheId}")
+    public ResponseEntity<?> putTache (@PathVariable("tacheId") String id,@RequestBody Tache tache) {
+    	    Optional<Tache> t = tr.findById(id);
+            t.get().setNom(tache.getNom());
+            t.get().setResponsable(t.get().getResponsable());
+            tr.save(t.get());
+            return new ResponseEntity<>(HttpStatus.OK);
+    }
+    
+    private Resources<Resource<Tache>> tacheToResource(Iterable<Tache> taches) {
+        Link selfLink = linkTo(methodOn(TacheRepresentation.class).getAlltaches()).withSelfRel();
+        List<Resource<Tache>> tacheRessources = new ArrayList();
+        taches.forEach(tache
+                -> tacheRessources.add(tacheToResource(tache, false)));
+        return new Resources<>(tacheRessources, selfLink);
+    }
+
+    private Resource<Tache> tacheToResource(Tache tache, Boolean collection) {
+        Link selfLink = linkTo(TacheRepresentation.class)
+                .slash(tache.getId())
+                .withSelfRel();
+        if (collection) {
+            Link collectionLink = linkTo(methodOn(TacheRepresentation.class).getAlltaches())
+                    .withSelfRel();
+            return new Resource<>(tache, selfLink, collectionLink);
+        } else {
+            return new Resource<>(tache, selfLink);
+        }
     }
 
     
