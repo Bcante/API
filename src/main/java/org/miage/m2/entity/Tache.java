@@ -2,10 +2,14 @@ package org.miage.m2.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -16,8 +20,11 @@ public class Tache implements Serializable {
     //@NotNull
     private String nom;
     //@NotNull
-    private String responsable;
-    //private Set<Utilisateur> participants;
+    @OneToOne
+    @JoinColumn(name ="idresponsable")
+    private Utilisateur responsable;
+    @OneToMany
+    private Set<Utilisateur> participants;
     private String dateCreation;
     private String dateEcheance;
     private String etatcourant; // ENUM
@@ -30,9 +37,10 @@ public class Tache implements Serializable {
     	this.nom = t.getNom();
 		this.responsable = t.getResponsable();	
 		this.etatcourant = "crée";
+		this.participants = new HashSet<>();
     }
     
-	public Tache(String nom, String responsable, String etatcourant) {
+	public Tache(String nom, Utilisateur responsable, String etatcourant) {
 		super();
 		this.dateCreation = LocalDate.now().toString();
 		this.nom = nom;
@@ -56,21 +64,21 @@ public class Tache implements Serializable {
 		this.nom = nom;
 	}
 
-	public String getResponsable() {
+	public Utilisateur getResponsable() {
 		return responsable;
 	}
 
-	public void setResponsable(String responsable) {
+	public void setResponsable(Utilisateur responsable) {
 		this.responsable = responsable;
 	}
-/*
+
 	public Set<Utilisateur> getParticipants() {
 		return participants;
 	}
 
 	public void setParticipants(Set<Utilisateur> participants) {
 		this.participants = participants;
-	}*/
+	}
 
 	public String getDateCreation() {
 		return dateCreation;

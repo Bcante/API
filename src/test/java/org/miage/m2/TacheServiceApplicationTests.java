@@ -42,7 +42,7 @@ public class TacheServiceApplicationTests {
 		try {
 			mvc.perform(get("/taches"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$._embedded.taches[0].nom", is("coiffeur")));
+			.andExpect(jsonPath("$._embedded.taches[0].nom", is("conseil de classe")));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -80,7 +80,7 @@ public class TacheServiceApplicationTests {
 		try {
 			mvc.perform(get("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.nom", is("coiffeur")));
+			.andExpect(jsonPath("$.nom", is("conseil de classe")));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

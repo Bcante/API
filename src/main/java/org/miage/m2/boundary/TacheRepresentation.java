@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.miage.m2.entity.Tache;
+import org.miage.m2.entity.Utilisateur;
 import org.springframework.hateoas.ExposesResourceFor;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
@@ -44,7 +45,7 @@ public class TacheRepresentation {
         Iterable<Tache> allTaches = tr.findByEtatcourant(etat);
         return new ResponseEntity<>(tacheToResource(allTaches), HttpStatus.OK);
     }
- // GET all
+    // GET all
     @GetMapping()
     public ResponseEntity<?> getAlltaches() {
         Iterable<Tache> allTaches = tr.findAll();
@@ -88,11 +89,42 @@ public class TacheRepresentation {
     @PutMapping(value = "/{tacheId}")
     public ResponseEntity<?> putTache (@PathVariable("tacheId") String id,@RequestBody Tache tache) {
     	    Optional<Tache> t = tr.findById(id);
+    	    if (!t.isPresent())
+    	    	return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             t.get().setNom(tache.getNom());
-            t.get().setResponsable(t.get().getResponsable());
+            t.get().setResponsable(tache.getResponsable());
             tr.save(t.get());
             return new ResponseEntity<>(HttpStatus.OK);
     }
+    
+    /*
+     * Sur deux entités
+     */
+    
+    //GET
+    @GetMapping(value = "/{tacheId}/participants")
+    public ResponseEntity<?> getTacheWithParticipants(@PathVariable("tacheId") String id) {
+        
+    	return Optional.ofNullable(tr.findById(id))
+                .filter(Optional::isPresent)
+                .map(i -> new ResponseEntity<>(tacheToResource(i.get(), true), HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+    
+    // Post
+    @PostMapping(value = "/{tacheId}/participants")
+    public ResponseEntity<?> newTacheWithParticipants(@RequestBody Tache tache) {
+    	tache.setId(UUID.randomUUID().toString());
+    	tache.setEtatCourant("encours");
+        Tache saved = tr.save(tache);
+        
+        // Ajouts partcipants ???????
+        HttpHeaders responseHeader = new HttpHeaders();
+        responseHeader.setLocation(linkTo(TacheRepresentation.class).slash(saved.getId()).toUri());
+        return new ResponseEntity<>(null, responseHeader, HttpStatus.CREATED);
+    }
+    
+    
     
     private Resources<Resource<Tache>> tacheToResource(Iterable<Tache> taches) {
         Link selfLink = linkTo(methodOn(TacheRepresentation.class).getAlltaches()).withSelfRel();
@@ -114,6 +146,5 @@ public class TacheRepresentation {
             return new Resource<>(tache, selfLink);
         }
     }
-
     
 }
