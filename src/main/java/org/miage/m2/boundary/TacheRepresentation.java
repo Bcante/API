@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.miage.m2.entity.Etat;
 import org.miage.m2.entity.Tache;
 import org.miage.m2.entity.Utilisateur;
 import org.springframework.hateoas.ExposesResourceFor;
@@ -68,7 +69,7 @@ public class TacheRepresentation {
     @PostMapping
     public ResponseEntity<?> newTache(@RequestBody Tache tache) {
     	tache.setId(UUID.randomUUID().toString());
-    	tache.setEtatCourant("encours");
+    	tache.setEtatCourant(Etat.encours.toString());
         Tache saved = tr.save(tache);
         HttpHeaders responseHeader = new HttpHeaders();
         responseHeader.setLocation(linkTo(TacheRepresentation.class).slash(saved.getId()).toUri());
@@ -79,7 +80,7 @@ public class TacheRepresentation {
     public ResponseEntity<?> deletetache(@PathVariable("tacheId") String id) {
         Optional<Tache> tache = tr.findById(id);
         if (tache.isPresent()) {
-        	tache.get().setEtatCourant("achevée");
+        	tache.get().setEtatCourant(Etat.achevée.toString());
         	tr.save(tache.get());
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -102,7 +103,7 @@ public class TacheRepresentation {
      */
     
     //GET
-    @GetMapping(value = "{tacheId}/participants")
+    @GetMapping(value = "{tacheId}/participants") 
     public ResponseEntity<?> getParticipantsFromTache(@PathVariable("tacheId") String id)
     {
     	return Optional.ofNullable(tr.findById(id))
