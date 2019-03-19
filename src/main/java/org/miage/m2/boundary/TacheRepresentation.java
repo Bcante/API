@@ -6,6 +6,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.miage.m2.entity.Tache;
@@ -33,11 +34,13 @@ import org.springframework.web.bind.annotation.RestController;
 @ExposesResourceFor(Tache.class)
 public class TacheRepresentation {
 
-    private final TacheRessource tr;
-
-    public TacheRepresentation(TacheRessource tr) {
-        this.tr = tr;
-    }
+	    private final TacheRessource tr;
+	    private final UtilisateurRessource ur;
+	
+	    public TacheRepresentation(TacheRessource tr, UtilisateurRessource ur) {
+	        this.tr = tr;
+	        this.ur =ur;
+	    }
 
     // GET all by etat
     @GetMapping(params="etat")
@@ -59,10 +62,7 @@ public class TacheRepresentation {
                 .filter(Optional::isPresent)
                 .map(i -> new ResponseEntity<>(tacheToResource(i.get(), true), HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-
-    
+    }    
     
     // POST
     @PostMapping
@@ -102,28 +102,55 @@ public class TacheRepresentation {
      */
     
     //GET
-    @GetMapping(value = "/{tacheId}/participants")
-    public ResponseEntity<?> getTacheWithParticipants(@PathVariable("tacheId") String id) {
-        
+    @GetMapping(value = "{tacheId}/participants")
+    public ResponseEntity<?> getParticipantsFromTache(@PathVariable("tacheId") String id)
+    {
     	return Optional.ofNullable(tr.findById(id))
                 .filter(Optional::isPresent)
-                .map(i -> new ResponseEntity<>(tacheToResource(i.get(), true), HttpStatus.OK))
+                .map(i -> new ResponseEntity<>(i.get().getParticipants(), HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
+    @GetMapping(value = "{tacheId}/participants/{utilisateurId}")
+    public ResponseEntity<?> getParticipantFromTache(@PathVariable("tacheId") String idT, @PathVariable("utilisateurId") String idU)
+    {
+    	Optional<Tache> t = tr.findById(idT);
+    	Set<Utilisateur> set = t.get().getParticipants();
+    	for (Utilisateur u : set) {
+    		if (u.getId().equals(idU)) {
+    			return new ResponseEntity<>(u, HttpStatus.OK);
+    		}
+    	}
+    	return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    
     // Post
-    @PostMapping(value = "/{tacheId}/participants")
-    public ResponseEntity<?> newTacheWithParticipants(@RequestBody Tache tache) {
-    	tache.setId(UUID.randomUUID().toString());
-    	tache.setEtatCourant("encours");
-        Tache saved = tr.save(tache);
-        
-        // Ajouts partcipants ???????
+    @PostMapping(value = "/{tacheId}/{utilisateurId}")
+    public ResponseEntity<?> newTacheWithParticipants(@PathVariable("tacheId") String idT, @PathVariable("utilisateurId") String idU) {
+    	Optional <Utilisateur> u = ur.findById(idU);
+    	Optional <Tache> t = tr.findById(idT);
+    	t.get().getParticipants().add(u.get());
+    	tr.save(t.get());
         HttpHeaders responseHeader = new HttpHeaders();
-        responseHeader.setLocation(linkTo(TacheRepresentation.class).slash(saved.getId()).toUri());
+        responseHeader.setLocation(linkTo(TacheRepresentation.class).slash(t.get().getId()).slash(u.get().getId()).toUri());
         return new ResponseEntity<>(null, responseHeader, HttpStatus.CREATED);
     }
     
+    //Delete
+    @DeleteMapping(value = "/{tacheId}/participants/{utilisateurId}")
+    public ResponseEntity<?> removeUtilisateurFromTache(@PathVariable("tacheId") String id, @PathVariable("utilisateurId") String idU) {
+        Optional<Tache> tache = tr.findById(id);
+        if (tache.isPresent()) {
+        	Set<Utilisateur> set = tache.get().getParticipants();
+        	for (Utilisateur u : set) {
+        		if (u.getId().equals(idU)) {
+        			tache.get().getParticipants().remove(u);
+        			tr.save(tache.get());
+        		}
+        	}
+        }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
     
     
     private Resources<Resource<Tache>> tacheToResource(Iterable<Tache> taches) {
@@ -146,5 +173,7 @@ public class TacheRepresentation {
             return new Resource<>(tache, selfLink);
         }
     }
+    
+    
     
 }
