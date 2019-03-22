@@ -37,17 +37,17 @@ public class TacheServiceApplicationTests {
 	@Autowired
 	private MockMvc mvc;
 	
-	@Test
+	/*@Test
 	public void getTaches() {
 		try {
 			mvc.perform(get("/taches"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$._embedded.taches[0].nom", is("conseil de classe")));
+			.andExpect(jsonPath("$._embedded.taches[0].nom", is("assurance")));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
+	}*/
 	
 	@Test
 	public void getTacheByEtatCourant() {
@@ -75,10 +75,23 @@ public class TacheServiceApplicationTests {
 	}
 	
 	@Test
+	public void getTacheByIdBadToken() {
+		try {
+			mvc.perform(get("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82")
+					.header("token", "ab"))
+			.andExpect(status().isUnauthorized());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
 	public void getTacheById() {
 		//http://localhost:8082/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82
 		try {
-			mvc.perform(get("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82"))
+			mvc.perform(get("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82")
+					.header("token", "a"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.nom", is("conseil de classe")));
 		} catch (Exception e) {
@@ -90,7 +103,7 @@ public class TacheServiceApplicationTests {
 	@Test
 	public void getTacheById404() {
 		try {
-			mvc.perform(get("/taches/zzde7d9052-4961-4b4f-938a-3cd12cbe1f82"))
+			mvc.perform(get("/taches/geionjoqef-4961-4b4f-938a-3cd12cbe1f82"))
 			.andExpect(status().isNotFound());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -104,7 +117,21 @@ public class TacheServiceApplicationTests {
 			this.mvc.perform(post("/taches")
 			        .contentType(MediaType.APPLICATION_JSON)
 			        .content("{\"nom\":\"bob\"}"))
-			        .andExpect(status().is2xxSuccessful());
+			        .andExpect(status().isCreated());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void putTachesBadToken() {
+		try {
+			mvc.perform(put("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82")
+					.header("token", "ab")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"nom\":\"bob\"}"))
+			.andExpect(status().isUnauthorized());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -113,37 +140,164 @@ public class TacheServiceApplicationTests {
 	
 	@Test
 	public void putTachesEtatNonAcheve() {
-		
+		try {
+			mvc.perform(put("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82")
+					.header("token", "a")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"nom\":\"bob\"}"))
+			.andExpect(status().isOk());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Test
 	public void putTachesEtatAcheve() {
-		
+		try {
+			mvc.perform(put("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f85")
+					.header("token", "a")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"nom\":\"bob\"}"))
+			.andExpect(status().isNotAcceptable());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Test
 	public void postTacheNvParticipant() {
-		
+		try {
+			mvc.perform(post("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f83/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "a"))
+			.andExpect(status().isCreated());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void postTacheNvParticipantEtatAchevee() {
+		try {
+			mvc.perform(post("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f85/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "a"))
+			.andExpect(status().isNotAcceptable());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void postTacheNvParticipantBadToken() {
+		try {
+			mvc.perform(post("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "ab"))
+			.andExpect(status().isUnauthorized());
+		} catch (Exception e) {
+			// T22ODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Test
 	public void getTacheParticipants() {
-		
+		try {
+			mvc.perform(post("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f83/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "a"));
+			mvc.perform(get("/de7d9052-4961-4b4f-938a-3cd12cbe1f83/participants")
+					.header("token", "a"))
+			.andExpect(status().isOk());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
+	
+	@Test
+	public void getTacheParticipantsBadToken() {
+		try {
+			mvc.perform(post("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f83/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "a"));
+			mvc.perform(get("/de7d9052-4961-4b4f-938a-3cd12cbe1f83/participants")
+					.header("token", "ab"))
+			.andExpect(status().isUnauthorized());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	
 	@Test
 	public void getTacheParticipant() {
-		
+		try {
+			
+			mvc.perform(get("/taches/participants")
+					.header("token", "a"))
+			.andExpect(status().isOk());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	@Test
-	public void getTacheDeleteParticipant() {
+	public void getTacheParticipantBadToken() {
 		
 	}
 	
 	@Test
 	public void deleteTache() {
-		
+		try {
+			mvc.perform(delete("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82")
+					.header("token", "a"))
+			.andExpect(status().isNoContent());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
+	
+	@Test
+	public void deleteTacheBadToken() {
+		try {
+			mvc.perform(delete("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82")
+					.header("token", "ab"))
+			.andExpect(status().isUnauthorized());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
+	@Test
+	public void getTacheDeleteParticipant() {
+		try {
+			mvc.perform(delete("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82/participants/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "a"))
+			.andExpect(status().isNoContent());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void getTacheDeleteParticipantBadToken() {
+		try {
+			mvc.perform(delete("/taches/de7d9052-4961-4b4f-938a-3cd12cbe1f82/participants/de7d9052-4961-4b4f-938a-3cd12cbe1f81")
+					.header("token", "ab"))
+			.andExpect(status().isUnauthorized());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
 
 }

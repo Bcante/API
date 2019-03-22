@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,44 +59,75 @@ public class TacheRepresentation {
 
     // GET one
     @GetMapping(value = "/{tacheId}")
-    public ResponseEntity<?> getTache(@PathVariable("tacheId") String id) {
-        return Optional.ofNullable(tr.findById(id))
-                .filter(Optional::isPresent)
-                .map(i -> new ResponseEntity<>(tacheToResource(i.get(), true), HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public ResponseEntity<?> getTache(@PathVariable("tacheId") String id, @RequestHeader(value="token") String tokenU) {
+    	
+    	Optional<Tache> t = tr.findById(id);
+    	
+    	String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+	
+    	return Optional.ofNullable(t)
+	            .filter(Optional::isPresent)
+	            .map(i -> new ResponseEntity<>(tacheToResource(i.get(), true), HttpStatus.OK))
+	            .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+	
     }    
     
     // POST
     @PostMapping
     public ResponseEntity<?> newTache(@RequestBody Tache tache) {
     	tache.setId(UUID.randomUUID().toString());
-    	tache.setEtatCourant(Etat.encours.toString());
+    	
+    	if (tache.getParticipants().isEmpty()) 
+    		tache.setEtatCourant(Etat.crée.toString());
+    	else
+    		tache.setEtatCourant(Etat.encours.toString());
+    	
+    	String token = tache.generateToken(); //
         Tache saved = tr.save(tache);
+        
         HttpHeaders responseHeader = new HttpHeaders();
         responseHeader.setLocation(linkTo(TacheRepresentation.class).slash(saved.getId()).toUri());
         return new ResponseEntity<>(null, responseHeader, HttpStatus.CREATED);
     }
+    
     // DELETE
     @DeleteMapping(value = "/{tacheId}")
-    public ResponseEntity<?> deletetache(@PathVariable("tacheId") String id) {
-        Optional<Tache> tache = tr.findById(id);
-        if (tache.isPresent()) {
-        	tache.get().setEtatCourant(Etat.achevée.toString());
-        	tr.save(tache.get());
+    public ResponseEntity<?> deletetache(@PathVariable("tacheId") String id,@RequestHeader(value="token") String tokenU) {
+        Optional<Tache> t = tr.findById(id);
+        
+    	String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+        
+        if (t.isPresent()) {
+        	t.get().setEtatCourant(Etat.achevée.toString());
+        	tr.save(t.get());
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
     // PUT
     @PutMapping(value = "/{tacheId}")
-    public ResponseEntity<?> putTache (@PathVariable("tacheId") String id,@RequestBody Tache tache) {
-    	    Optional<Tache> t = tr.findById(id);
-    	    if (!t.isPresent())
+    public ResponseEntity<?> putNewStateTache (@PathVariable("tacheId") String id,@RequestBody Tache tache
+    		,@RequestHeader(value="token") String tokenU) {
+    	if (!tr.existsById(id))
     	    	return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            t.get().setNom(tache.getNom());
-            t.get().setResponsable(tache.getResponsable());
-            tr.save(t.get());
-            return new ResponseEntity<>(HttpStatus.OK);
+    	
+    	Optional<Tache> t = tr.findById(id);
+    	
+    	String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    	
+    	if (tache.getEtatCourant().equals(Etat.achevée.toString())) {
+    		return new ResponseEntity<>(null, HttpStatus.NOT_ACCEPTABLE);
+    	}
+    		
+	    tache.setId(id);
+        tr.save(tache);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
     
     /*
@@ -104,18 +136,31 @@ public class TacheRepresentation {
     
     //GET
     @GetMapping(value = "{tacheId}/participants") 
-    public ResponseEntity<?> getParticipantsFromTache(@PathVariable("tacheId") String id)
+    public ResponseEntity<?> getParticipantsFromTache(@PathVariable("tacheId") String id,
+    		@RequestHeader(value="token") String tokenU)
     {
-    	return Optional.ofNullable(tr.findById(id))
+    	Optional<Tache> t = tr.findById(id);
+    	
+    	String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    	
+    	return Optional.ofNullable(t)
                 .filter(Optional::isPresent)
                 .map(i -> new ResponseEntity<>(i.get().getParticipants(), HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
     @GetMapping(value = "{tacheId}/participants/{utilisateurId}")
-    public ResponseEntity<?> getParticipantFromTache(@PathVariable("tacheId") String idT, @PathVariable("utilisateurId") String idU)
+    public ResponseEntity<?> getParticipantFromTache(@PathVariable("tacheId") String idT, @PathVariable("utilisateurId") String idU
+    		,@RequestHeader(value="token") String tokenU)
     {
     	Optional<Tache> t = tr.findById(idT);
+    	
+    	String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    	
     	Set<Utilisateur> set = t.get().getParticipants();
     	for (Utilisateur u : set) {
     		if (u.getId().equals(idU)) {
@@ -127,11 +172,23 @@ public class TacheRepresentation {
     
     // Post
     @PostMapping(value = "/{tacheId}/{utilisateurId}")
-    public ResponseEntity<?> newTacheWithParticipants(@PathVariable("tacheId") String idT, @PathVariable("utilisateurId") String idU) {
+    public ResponseEntity<?> newTacheWithParticipants(@PathVariable("tacheId") String idT, @PathVariable("utilisateurId") String idU,
+    		@RequestHeader(value="token") String tokenU) {
     	Optional <Utilisateur> u = ur.findById(idU);
     	Optional <Tache> t = tr.findById(idT);
+    	
+    	String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    	
+    	if (t.get().getEtatCourant().equals(Etat.achevée.toString()) )
+    		return new ResponseEntity<>(null, HttpStatus.NOT_ACCEPTABLE);
+    	
     	t.get().getParticipants().add(u.get());
+    	if (t.get().getParticipants().size() == 1) 
+    		t.get().setEtatCourant(Etat.encours.toString());
     	tr.save(t.get());
+    	
         HttpHeaders responseHeader = new HttpHeaders();
         responseHeader.setLocation(linkTo(TacheRepresentation.class).slash(t.get().getId()).slash(u.get().getId()).toUri());
         return new ResponseEntity<>(null, responseHeader, HttpStatus.CREATED);
@@ -139,14 +196,20 @@ public class TacheRepresentation {
     
     //Delete
     @DeleteMapping(value = "/{tacheId}/participants/{utilisateurId}")
-    public ResponseEntity<?> removeUtilisateurFromTache(@PathVariable("tacheId") String id, @PathVariable("utilisateurId") String idU) {
-        Optional<Tache> tache = tr.findById(id);
-        if (tache.isPresent()) {
-        	Set<Utilisateur> set = tache.get().getParticipants();
+    public ResponseEntity<?> removeUtilisateurFromTache(@PathVariable("tacheId") String id, @PathVariable("utilisateurId") String idU
+    		,@RequestHeader(value="token") String tokenU) {
+        Optional<Tache> t = tr.findById(id);
+        
+        String tokenT = t.get().getToken();
+    	if (!tokenT.equals(tokenU))
+    		return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+    	
+        if (t.isPresent()) {
+        	Set<Utilisateur> set = t.get().getParticipants();
         	for (Utilisateur u : set) {
         		if (u.getId().equals(idU)) {
-        			tache.get().getParticipants().remove(u);
-        			tr.save(tache.get());
+        			t.get().getParticipants().remove(u);
+        			tr.save(t.get());
         		}
         	}
         }

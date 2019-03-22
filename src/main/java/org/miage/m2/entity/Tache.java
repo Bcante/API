@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 public class Tache implements Serializable {
@@ -25,27 +26,28 @@ public class Tache implements Serializable {
     private Utilisateur responsable;
     @OneToMany
     private Set<Utilisateur> participants;
-    private String dateCreation;
-    private String dateEcheance;
+    private LocalDate dateCreation;
+    private LocalDate dateEcheance;
     private String etatcourant; // ENUM
+    private String token;
 
     public Tache() {
     }
     
     public Tache(Tache t) {
-    	this.dateCreation = LocalDate.now().toString();
+    	this.dateCreation = LocalDate.now();
     	this.nom = t.getNom();
 		this.responsable = t.getResponsable();	
-		this.etatcourant = "crée";
+		this.etatcourant = Etat.crée.toString();
 		this.participants = new HashSet<>();
     }
     
 	public Tache(String nom, Utilisateur responsable, String etatcourant) {
 		super();
-		this.dateCreation = LocalDate.now().toString();
+		this.dateCreation = LocalDate.now();
 		this.nom = nom;
 		this.responsable = responsable;
-		this.etatcourant = "crée";
+		this.etatcourant = Etat.crée.toString();
 	}
 
 	public String getId() {
@@ -80,19 +82,19 @@ public class Tache implements Serializable {
 		this.participants = participants;
 	}
 
-	public String getDateCreation() {
+	public LocalDate getDateCreation() {
 		return dateCreation;
 	}
 
-	public void setDateCreation(String dateCreation) {
+	public void setDateCreation(LocalDate dateCreation) {
 		this.dateCreation = dateCreation;
 	}
 
-	public String getDateEcheance() {
+	public LocalDate getDateEcheance() {
 		return dateEcheance;
 	}
 
-	public void setDateEcheance(String dateEcheance) {
+	public void setDateEcheance(LocalDate dateEcheance) {
 		this.dateEcheance = dateEcheance;
 	}
 
@@ -100,12 +102,17 @@ public class Tache implements Serializable {
 		return etatcourant;
 	}
 
-	public void setEtatCourant(String etatcourant) {
-		this.etatcourant = etatcourant;
+	public void setEtatCourant(String etat) {
+		this.etatcourant = etat;
 	}
 
-    
-    
-    
+	public String getToken() {
+		return token;
+	}
+
+	public String generateToken() {
+		this.token = UUID.randomUUID().toString();
+		return this.token;
+	}
     
 }
